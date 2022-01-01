@@ -10,10 +10,10 @@ const UserSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    // profile_image: {
-    //   type: String,
-    //   required: true,
-    // },
+    profile_image: {
+      type: String,
+      required: true,
+    },
     password: {
       type: String,
       required: true,

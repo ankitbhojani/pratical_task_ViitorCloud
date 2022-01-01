@@ -7,12 +7,27 @@ const { default: Container } = require("typedi");
 
 exports.login = async (req, res) => {
   try {
+    const data = req.body;
+    let userExists = await User.findOne({ email: data["email"] });
+    if (!userExists) {
+      throw "User doesn't Exists with this email";
+    }
+    let password = sha256(data["password"] + dotenv.parsed.SALT);
+    if (password != userExists.password) {
+      res.status(401).json({
+        status: 401,
+        message: "Invalid Credencials",
+      });
+    }
+    const token = await this.UserTokenGenerate(userExists);
     res.json({
-      status: 200,
-      message: "test is there",
+      status: 201,
+      name: userExists.name,
+      message: "Successfully Login",
+      token: token,
     });
   } catch (error) {
-    throw "Something Went Wrong";
+    throw error;
   }
 };
 
@@ -20,16 +35,17 @@ exports.login = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const data = req.body;
-    // const file = req["file"];
-    // if (!file) {
-    //   throw "Profile Image is Required";
-    // }
+    const file = req["file"];
+    if (!file) {
+      throw "Profile Image is Required";
+    }
     let userExists = await User.findOne({ email: data["email"] });
     if (userExists) {
       throw "User already Exists with this email";
     }
     let password = sha256(data["password"] + dotenv.parsed.SALT);
     data["password"] = password;
+    data["profile_image"] = file["filename"];
     let saveUser = new User(data);
     await saveUser.save();
 
@@ -44,12 +60,12 @@ exports.register = async (req, res) => {
 
     const token = await this.UserTokenGenerate(saveUser);
     res.json({
-      status: 200,
+      status: 201,
       message: "You are successfully registered",
-      data: token,
+      token: token,
+      name: data["name"],
     });
   } catch (error) {
-    console.log(error, "error");
     throw error;
   }
 };
